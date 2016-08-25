@@ -318,6 +318,13 @@ module.exports = function(parameters) {
 
         setup: {
           api: function(searchTerm) {
+            // Uses REGEX and match initial must be specified together
+            if (settings.useRegexSearch) {
+              searchTerm = searchTerm.toString().replace(regExp.escape, '\\$&');
+              if (settings.matchInitial) {
+                searchTerm = "^" + searchTerm;
+              }
+            }
             var
               apiSettings = {
                 debug             : settings.debug,
@@ -395,10 +402,10 @@ module.exports = function(parameters) {
         get: {
           inputEvent: function() {
             var
-              prompt     = $prompt[0],
-              inputEvent = (prompt != undefined && prompt.oninput != undefined)
+              prompt = $prompt[0],
+              inputEvent   = (prompt !== undefined && prompt.oninput !== undefined)
                 ? 'input'
-                : (prompt != undefined && prompt.onpropertychange != undefined)
+                : (prompt !== undefined && prompt.onpropertychange !== undefined)
                   ? 'propertychange'
                   : 'keyup'
             ;
@@ -911,7 +918,7 @@ module.exports = function(parameters) {
               }
             }
             if($.isFunction(template)) {
-              html = template(response, fields);
+              html = template(response, fields, module.get.value(), settings.boldSearchTerm);
             }
             else {
               module.error(error.noTemplate, false);
@@ -1166,6 +1173,13 @@ _module.exports.settings = {
   // whether no results errors should be shown
   showNoResults  : true,
 
+  // search term regexp options
+  useRegexSearch: false,
+  matchInitial: false,
+
+  // whether search term should be bolded in results
+  boldSearchTerm: false,
+
   // transition settings
   transition     : 'scale',
   duration       : 200,
@@ -1346,7 +1360,7 @@ _module.exports.settings = {
       }
       return false;
     },
-    standard: function(response, fields) {
+    standard: function(response, fields, searchTerm, boldSearchTerm) {
       var
         html = ''
       ;
@@ -1372,7 +1386,20 @@ _module.exports.settings = {
             html += '<div class="price">' + result[fields.price] + '</div>';
           }
           if(result[fields.title] !== undefined) {
-            html += '<div class="title">' + result[fields.title] + '</div>';
+            var resultTitle = result[fields.title];
+            if (boldSearchTerm) {
+              var escapedSearchTerm = searchTerm.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+              if (/\(.*\)/.test(resultTitle)) {
+                // Bracketed content, put the rest of the string up until brackets in `<b></b>` tags
+                escapedSearchTerm = "(" + escapedSearchTerm + ")(.*)(\\(.*)";
+                resultTitle = String(resultTitle).replace(new RegExp(escapedSearchTerm, 'i'), '$1<b>$2</b>$3');
+              } else {
+                // No bracketed content, put the rest of the string in `<b></b>` tags
+                escapedSearchTerm = "(" + escapedSearchTerm + ")(.*)";
+                resultTitle = String(resultTitle).replace(new RegExp(escapedSearchTerm, 'i'), '$1<b>$2</b>');
+              }
+            }
+            html += '<div class="title">' + resultTitle + '</div>';
           }
           if(result[fields.description] !== undefined) {
             html += '<div class="description">' + result[fields.description] + '</div>';
