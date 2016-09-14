@@ -321,9 +321,6 @@ module.exports = function(parameters) {
             // Uses REGEX and match initial must be specified together
             if (settings.useRegexSearch) {
               searchTerm = searchTerm.toString().replace(regExp.escape, '\\$&');
-              if (settings.matchInitial) {
-                searchTerm = "^" + searchTerm;
-              }
             }
             var
               apiSettings = {
@@ -1175,7 +1172,6 @@ _module.exports.settings = {
 
   // search term regexp options
   useRegexSearch: false,
-  matchInitial: false,
 
   // whether search term should be bolded in results
   boldSearchTerm: false,
